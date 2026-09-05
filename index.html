@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>CubeDeck</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 128 128'%3E%3Cpolygon points='12,38 34,16 113,16 91,38' fill='%239ed2f6' stroke='%23102e50' stroke-width='6' stroke-linejoin='round'/%3E%3Cpolygon points='91,38 113,16 113,96 91,118' fill='%2322568c' stroke='%23102e50' stroke-width='6' stroke-linejoin='round'/%3E%3Crect x='12' y='38' width='79' height='80' rx='8' fill='%236cb2eb' stroke='%23102e50' stroke-width='6'/%3E%3Cpolygon points='43,58 43,98 74,78' fill='white'/%3E%3C/svg%3E">
+<style>
+  :root{
+    color-scheme: light dark;
+    --bg:#f6f8fb; --panel:#ffffff; --fg:#14202e; --muted:#5b6b7f;
+    --line:#dbe3ec; --accent:#1460a8; --accent-soft:#6cb2eb; --bad:#c5221f;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f151d; --panel:#161d27; --fg:#e7edf5; --muted:#9fb0c4;
+      --line:#26313f; --accent:#6cb2eb; --accent-soft:#22568c; --bad:#ff8a80;
+    }
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; min-height:100vh; padding:24px; background:var(--bg); color:var(--fg);
+    font:16px/1.6 system-ui,"Segoe UI",Roboto,sans-serif;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .box{
+    width:360px; max-width:100%; background:var(--panel); border:1px solid var(--line);
+    border-radius:14px; padding:26px 26px 22px; text-align:center;
+    box-shadow:0 12px 40px rgba(0,0,0,.12);
+  }
+  svg.cube{width:56px;height:56px;display:block;margin:0 auto 12px}
+  h1{margin:0 0 2px;font-size:20px;letter-spacing:.4px}
+  .sub{margin:0 0 20px;color:var(--muted);font-size:14px}
+  label{display:block;text-align:left;font-size:13px;color:var(--muted);margin-bottom:6px}
+  input{
+    width:100%; padding:11px 12px; font:inherit; font-size:15px; text-align:center;
+    color:var(--fg); background:var(--bg); border:1px solid var(--line); border-radius:9px;
+  }
+  input:focus{outline:none;border-color:var(--accent)}
+  button{
+    margin-top:12px; width:100%; padding:11px; font:inherit; font-weight:600; font-size:15px;
+    color:#fff; background:var(--accent); border:0; border-radius:9px; cursor:pointer;
+  }
+  button:hover{background:var(--accent-soft)}
+  button:disabled{opacity:.55;cursor:not-allowed}
+  #msg{min-height:20px;margin-top:12px;font-size:13px;color:var(--bad)}
+  .hint{margin:16px 0 0;padding-top:14px;border-top:1px solid var(--line);
+        color:var(--muted);font-size:12px;line-height:1.5}
+</style>
+</head>
+<body>
+<div class="box">
+  <svg class="cube" viewBox="0 0 128 128" aria-hidden="true">
+    <polygon points="12,38 34,16 113,16 91,38" fill="#9ed2f6" stroke="#102e50" stroke-width="6" stroke-linejoin="round"/>
+    <polygon points="91,38 113,16 113,96 91,118" fill="#22568c" stroke="#102e50" stroke-width="6" stroke-linejoin="round"/>
+    <rect x="12" y="38" width="79" height="80" rx="8" fill="#6cb2eb" stroke="#102e50" stroke-width="6"/>
+    <polygon points="43,58 43,98 74,78" fill="white"/>
+  </svg>
+  <h1>CubeDeck</h1>
+  <p class="sub">Fifteen tools for the YouTube web interface.</p>
+  <label for="pw">Password</label>
+  <input id="pw" type="password" autocomplete="off" autofocus>
+  <button id="go">Enter</button>
+  <div id="msg"></div>
+  <p class="hint">Bookmark the page that opens and it will not ask again.</p>
+</div>
+<script>
+// The documentation and the download sit at p-<sha256("cubedeck:<password>")[:20]>/,
+// worked out here at submit time. Neither the password nor the folder name is in
+// this page's source, and a wrong password has nothing to probe: the folder it
+// derives simply does not exist.
+async function enter(){
+  const msg = document.getElementById('msg');
+  const go = document.getElementById('go');
+  const pass = document.getElementById('pw').value.trim();
+  if (!pass){ msg.textContent = 'Password is empty.'; return; }
+
+  go.disabled = true;
+  msg.style.color = 'var(--muted)';
+  msg.textContent = 'Checking…';
+
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode('cubedeck:' + pass));
+  const hex = [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('');
+  const dir = 'p-' + hex.slice(0, 20) + '/';
+  try {
+    const r = await fetch(dir + 'index.html', { method: 'HEAD', cache: 'no-store' });
+    if (r.ok){ location.href = dir; return; }
+  } catch (e) {}
+  msg.style.color = 'var(--bad)';
+  msg.textContent = 'Wrong password.';
+  go.disabled = false;
+}
+document.getElementById('go').addEventListener('click', enter);
+document.getElementById('pw').addEventListener('keydown', e => { if (e.key === 'Enter') enter(); });
+</script>
+</body>
+</html>

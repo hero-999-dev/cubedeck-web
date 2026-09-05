@@ -1,0 +1,520 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>CubeDeck — how it works</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 128 128'%3E%3Cpolygon points='12,38 34,16 113,16 91,38' fill='%239ed2f6' stroke='%23102e50' stroke-width='6' stroke-linejoin='round'/%3E%3Cpolygon points='91,38 113,16 113,96 91,118' fill='%2322568c' stroke='%23102e50' stroke-width='6' stroke-linejoin='round'/%3E%3Crect x='12' y='38' width='79' height='80' rx='8' fill='%236cb2eb' stroke='%23102e50' stroke-width='6'/%3E%3Cpolygon points='43,58 43,98 74,78' fill='white'/%3E%3C/svg%3E" />
+    <style>
+      :root {
+        color-scheme: light dark;
+        --bg: #f6f8fb;
+        --panel: #ffffff;
+        --fg: #14202e;
+        --muted: #5b6b7f;
+        --line: #dbe3ec;
+        --accent: #1460a8;
+        --accent-soft: #6cb2eb;
+        --code-bg: #eef2f7;
+        --ok: #1f7a4d;
+        --warn: #9a6400;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #0f151d;
+          --panel: #161d27;
+          --fg: #e7edf5;
+          --muted: #9fb0c4;
+          --line: #26313f;
+          --accent: #6cb2eb;
+          --accent-soft: #22568c;
+          --code-bg: #101823;
+          --ok: #56c98d;
+          --warn: #e0b055;
+        }
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--fg);
+        font: 16px/1.6 system-ui, "Segoe UI", Roboto, sans-serif;
+      }
+      .wrap { max-width: 1100px; margin: 0 auto; padding: 32px 20px 80px; }
+      header.top {
+        display: flex; gap: 18px; align-items: center; flex-wrap: wrap;
+        padding: 28px; border-radius: 18px; background: var(--panel);
+        border: 1px solid var(--line);
+      }
+      .logo { width: 64px; height: 64px; flex: 0 0 auto; }
+      h1 { margin: 0; font-size: 30px; letter-spacing: -0.4px; }
+      h2 {
+        margin: 44px 0 12px; font-size: 22px; letter-spacing: -0.2px;
+        padding-bottom: 8px; border-bottom: 2px solid var(--line);
+      }
+      h3 { margin: 26px 0 8px; font-size: 17px; }
+      p, li { color: var(--fg); }
+      .lede { color: var(--muted); margin: 6px 0 0; }
+      .pill {
+        display: inline-block; padding: 3px 10px; border-radius: 999px;
+        background: var(--accent-soft); color: #06121f; font-size: 13px; font-weight: 700;
+      }
+      @media (prefers-color-scheme: dark) { .pill { color: #dff0ff; } }
+      .card {
+        background: var(--panel); border: 1px solid var(--line);
+        border-radius: 14px; padding: 18px 20px; margin: 16px 0;
+      }
+      .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+      code, kbd {
+        font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+        font-size: 13.5px; background: var(--code-bg); padding: 1px 5px; border-radius: 5px;
+      }
+      pre {
+        background: var(--code-bg); border: 1px solid var(--line); border-radius: 10px;
+        padding: 14px 16px; overflow-x: auto;
+      }
+      pre code { background: none; padding: 0; font-size: 13px; line-height: 1.55; }
+      .tablewrap { overflow-x: auto; }
+      table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+      th, td { text-align: left; padding: 9px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+      th { color: var(--muted); font-weight: 600; white-space: nowrap; }
+      tbody tr:hover { background: color-mix(in srgb, var(--accent) 6%, transparent); }
+      .code2 {
+        display: inline-block; min-width: 26px; text-align: center;
+        font-family: ui-monospace, Consolas, monospace; font-weight: 700; font-size: 13px;
+        background: var(--code-bg); border-radius: 5px; padding: 1px 4px;
+      }
+      nav.toc ol { margin: 0; padding-left: 20px; columns: 2; column-gap: 28px; }
+      nav.toc a { color: var(--accent); text-decoration: none; }
+      nav.toc a:hover { text-decoration: underline; }
+      .note {
+        border-left: 4px solid var(--accent); padding: 10px 14px; margin: 14px 0;
+        background: color-mix(in srgb, var(--accent) 8%, transparent); border-radius: 0 10px 10px 0;
+      }
+      .warn { border-left-color: var(--warn); background: color-mix(in srgb, var(--warn) 10%, transparent); }
+      .ok { color: var(--ok); font-weight: 600; }
+      svg.mindmap { width: 100%; height: auto; display: block; }
+      footer { margin-top: 60px; color: var(--muted); font-size: 14px; }
+      ul.tight li { margin: 3px 0; }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header class="top">
+        <svg class="logo" viewBox="0 0 128 128" aria-hidden="true">
+          <polygon points="12,38 34,16 113,16 91,38" fill="#9ed2f6" stroke="#102e50" stroke-width="6" stroke-linejoin="round"/>
+          <polygon points="91,38 113,16 113,96 91,118" fill="#22568c" stroke="#102e50" stroke-width="6" stroke-linejoin="round"/>
+          <rect x="12" y="38" width="79" height="80" rx="8" fill="#6cb2eb" stroke="#102e50" stroke-width="6"/>
+          <polygon points="43,58 43,98 74,78" fill="#ffffff"/>
+        </svg>
+        <div>
+          <h1>CubeDeck <span class="pill">v1.6.1</span></h1>
+          <p class="lede">
+            One browser extension, fifteen small tools for the YouTube web interface — each one
+            switchable on its own. This page documents every part of it: the architecture, each
+            widget, the layout maths, the network calls, the performance work and the tests.
+          </p>
+        </div>
+      </header>
+
+      <div class="note">
+        <strong>Download — <a href="CubeDeck-1.6.1.zip">CubeDeck-1.6.1.zip</a></strong> (browser extension:
+        Windows, macOS and Linux alike). Inside: the <code>CubeDeck</code> folder to load into the
+        browser, this page, and the check that ships with it. Loading it takes the six steps in §1.
+      </div>
+
+      <nav class="toc card">
+        <strong>Contents</strong>
+        <ol>
+          <li><a href="#install">Install</a></li>
+          <li><a href="#map">How it works — mind map</a></li>
+          <li><a href="#architecture">Architecture &amp; lifecycle</a></li>
+          <li><a href="#widgets">The fifteen widgets</a></li>
+          <li><a href="#hiding">How hiding works</a></li>
+          <li><a href="#layout">Masthead layout algorithm</a></li>
+          <li><a href="#settings">Settings panel</a></li>
+          <li><a href="#network">Network calls &amp; data</a></li>
+          <li><a href="#privacy">Privacy</a></li>
+          <li><a href="#perf">Performance work</a></li>
+          <li><a href="#tests">Tests</a></li>
+          <li><a href="#limits">Known limits</a></li>
+          <li><a href="#versioning">Versioning</a></li>
+          <li><a href="#legal">License &amp; disclaimer</a></li>
+        </ol>
+      </nav>
+
+      <h2 id="install">1. Install</h2>
+      <div class="card">
+        <h3>From the release zip</h3>
+        <ol class="tight">
+          <li>Download <code>CubeDeck-&lt;version&gt;.zip</code> from the repository (root folder or the Releases page).</li>
+          <li>Unzip it anywhere. You should end up with a folder containing <code>manifest.json</code>.</li>
+          <li>Open your browser's extension page:
+            <code>chrome://extensions</code>, <code>edge://extensions</code> or <code>opera://extensions</code>.</li>
+          <li>Turn on <strong>Developer mode</strong>.</li>
+          <li>Click <strong>Load unpacked</strong> and pick the unzipped folder.</li>
+          <li>Open YouTube and reload the tab. A row of small square icons appears in the top bar,
+            to the left of the search box.</li>
+        </ol>
+        <p class="lede">Updating: download the newer zip, replace the folder, then press the reload
+          arrow on the extension card and refresh the YouTube tab.</p>
+      </div>
+      <div class="note">
+        Manifest V3, no build step, no dependencies. The whole thing is plain JavaScript, HTML, CSS
+        and a PowerShell script that draws the PNG icons.
+      </div>
+
+      <h2 id="map">2. How it works — mind map</h2>
+      <div class="card">
+        <svg class="mindmap" viewBox="0 0 1180 720" role="img" aria-label="CubeDeck architecture mind map">
+          <defs>
+            <style>
+              .n { fill: var(--panel); stroke: var(--line); stroke-width: 2; }
+              .hub { fill: var(--accent); stroke: none; }
+              .hubt { fill: #ffffff; font: 700 17px system-ui; }
+              .bt { fill: var(--fg); font: 700 14px system-ui; }
+              .lt { fill: var(--muted); font: 12.5px ui-monospace, Consolas, monospace; }
+              .edge { fill: none; stroke: var(--accent-soft); stroke-width: 2.5; }
+              .edge2 { fill: none; stroke: var(--line); stroke-width: 2; }
+            </style>
+          </defs>
+
+          <!-- hub -->
+          <rect class="hub" x="470" y="325" width="240" height="70" rx="16"/>
+          <text class="hubt" x="590" y="358" text-anchor="middle">CubeDeck</text>
+          <text class="hubt" x="590" y="378" text-anchor="middle" style="font-size:12px;font-weight:500">content.js · popup · icons</text>
+
+          <!-- edges -->
+          <path class="edge" d="M470 345 C 380 320, 330 240, 250 205"/>
+          <path class="edge" d="M710 345 C 800 320, 850 240, 930 205"/>
+          <path class="edge" d="M710 375 C 820 400, 850 440, 930 470"/>
+          <path class="edge" d="M470 375 C 360 400, 330 450, 250 480"/>
+          <path class="edge" d="M590 395 C 590 470, 590 520, 590 585"/>
+
+          <!-- branch 1: popup -->
+          <rect class="n" x="90" y="150" width="230" height="46" rx="12"/>
+          <text class="bt" x="105" y="179">1 · Toolbar popup</text>
+          <path class="edge2" d="M205 196 v 18 h -95"/>
+          <text class="lt" x="110" y="232">15 checkboxes = widget on/off</text>
+          <path class="edge2" d="M205 214 v 26 h -95"/>
+          <text class="lt" x="110" y="258">writes cube-widgets to storage</text>
+          <path class="edge2" d="M205 240 v 26 h -95"/>
+          <text class="lt" x="110" y="284">descriptions follow ui-lang</text>
+
+          <!-- branch 2: content script -->
+          <rect class="n" x="860" y="150" width="240" height="46" rx="12"/>
+          <text class="bt" x="875" y="179">2 · Content script</text>
+          <path class="edge2" d="M980 196 v 18 h 95"/>
+          <text class="lt" x="875" y="232">builds the masthead icon row</text>
+          <path class="edge2" d="M980 214 v 26 h 95"/>
+          <text class="lt" x="875" y="258">re-syncs on yt-navigate-finish</text>
+          <path class="edge2" d="M980 240 v 26 h 95"/>
+          <text class="lt" x="875" y="284">reacts to storage changes</text>
+
+          <!-- branch 3: widgets -->
+          <rect class="n" x="860" y="440" width="240" height="46" rx="12"/>
+          <text class="bt" x="875" y="469">3 · Widgets</text>
+          <text class="lt" x="875" y="506">add: PA CC CF TS UD TD</text>
+          <text class="lt" x="875" y="530">hide: CH HR HS HL HE HM HY HC</text>
+          <text class="lt" x="875" y="554">gear: ST (settings panel)</text>
+
+          <!-- branch 4: storage -->
+          <rect class="n" x="90" y="440" width="230" height="46" rx="12"/>
+          <text class="bt" x="105" y="469">4 · Local storage</text>
+          <text class="lt" x="105" y="506">cube-widgets · per-widget keys</text>
+          <text class="lt" x="105" y="530">ui-lang · popup-strings</text>
+          <text class="lt" x="105" y="554">cc-categories · cf-selection</text>
+
+          <!-- branch 5: data -->
+          <rect class="n" x="450" y="585" width="280" height="46" rx="12"/>
+          <text class="bt" x="465" y="614">5 · Data sources</text>
+          <text class="lt" x="465" y="651">channel RSS feeds · player endpoint</text>
+          <text class="lt" x="465" y="675">translation endpoint · ratings API</text>
+        </svg>
+        <p class="lede">
+          Read it clockwise: the popup decides which widgets exist, the content script builds the
+          icon row and keeps it in sync with the page, each widget then either adds something to
+          YouTube or hides part of it, and a few of them pull data from public endpoints.
+        </p>
+      </div>
+
+      <h2 id="architecture">3. Architecture &amp; lifecycle</h2>
+      <div class="tablewrap card">
+        <table>
+          <thead><tr><th>File</th><th>Size</th><th>Job</th></tr></thead>
+          <tbody>
+            <tr><td><code>manifest.json</code></td><td>~1 KB</td><td>MV3 manifest: one content script on <code>www.youtube.com</code>, a popup, a service worker, three host permissions.</td></tr>
+            <tr><td><code>content.js</code></td><td>~139 KB</td><td>Everything that runs on the page: the icon row, all fifteen widgets, the settings panel, the layout maths.</td></tr>
+            <tr><td><code>popup.html</code> / <code>popup.js</code></td><td>~8 KB</td><td>The toolbar panel: one checkbox per widget, version badge, translated descriptions.</td></tr>
+            <tr><td><code>background.js</code></td><td>~1 KB</td><td>Service worker. Only used for the one cross-origin request a content script may not make itself.</td></tr>
+            <tr><td><code>icons/*.png</code></td><td>33 files</td><td>Toolbar cube plus a light/dark pair for every masthead button.</td></tr>
+            <tr><td><code>icons/generate-icons.ps1</code></td><td>~9 KB</td><td>Draws every PNG from code — colours come from a hue formula, so no two icons look alike.</td></tr>
+            <tr><td><code>checks/translate-retry.mjs</code></td><td>~3 KB</td><td>Sits beside the extension folder, not inside it. Node, no dependencies, no network — see §11.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Lifecycle of one page load</h3>
+      <pre><code>document_idle
+   └─ content.js runs
+        ├─ loadUiLanguage()        read ui-lang + cached translations
+        ├─ trySync()               find the masthead, build the icon row
+        │    ├─ enabledWidgets()   which widgets are switched on
+        │    ├─ widget.create()    one button per enabled widget, fixed order
+        │    ├─ widget.update()    brightness + tooltip from the saved setting
+        │    ├─ widget.onNavigate()  apply the widget to this page
+        │    └─ keepSearchBoxStill()  size and place the row
+        ├─ applyStToggles()        the settings-panel switches
+        └─ syncPastStreamScanner() only if HideLive is on
+
+yt-navigate-finish  (YouTube is a single-page app: no reload between videos)
+   └─ the same three steps run again</code></pre>
+
+      <h3>Storage keys</h3>
+      <div class="tablewrap card">
+        <table>
+          <thead><tr><th>Key</th><th>Holds</th><th>Default</th></tr></thead>
+          <tbody>
+            <tr><td><code>cube-widgets</code></td><td>Which widgets exist at all (from the popup)</td><td>all on</td></tr>
+            <tr><td><code>hc-hidden</code>, <code>ch-hidden</code>, <code>hr-hidden</code>, <code>hs-hidden</code>, <code>hl-hidden</code>, <code>he-hidden</code>, <code>hm-hidden</code>, <code>hy-hidden</code>, <code>hchannels-hidden</code></td><td>One per hiding widget: is it hiding right now</td><td>off</td></tr>
+            <tr><td><code>td-enabled</code>, <code>ud-enabled</code>, <code>ts-open</code></td><td>Per-widget toggles for the three that add something</td><td>on / on / off</td></tr>
+            <tr><td><code>st-hide-sidebar</code>, <code>st-hide-voice</code>, <code>st-hide-create</code>, <code>st-hide-notifications</code>, <code>st-hide-description</code></td><td>The settings-panel switches</td><td>off</td></tr>
+            <tr><td><code>ui-lang</code>, <code>ui-strings</code>, <code>popup-strings</code></td><td>Interface language and its cached translations</td><td>English</td></tr>
+            <tr><td><code>cc-categories</code>, <code>cf-selection</code>, <code>cc-visible</code></td><td>Channel categories and which one the home page shows</td><td>empty</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Everything lives in <code>chrome.storage.local</code>. A change in one tab reaches every other
+        open tab through <code>chrome.storage.onChanged</code>, so switches take effect without a reload.</p>
+
+      <h2 id="widgets">4. The fifteen widgets</h2>
+      <p>The two-letter code is what the masthead icon shows, and the same code is printed next to the
+        name in the popup. A bright icon means the widget is doing something right now; a dim icon
+        means it is idle. For the hiding widgets that reads as <em>bright = something is hidden</em>.</p>
+      <div class="tablewrap card">
+        <table>
+          <thead><tr><th>Code</th><th>Name</th><th>Works on</th><th>What it does</th></tr></thead>
+          <tbody>
+            <tr><td><span class="code2">PA</span></td><td>PlayAll</td><td>channel pages</td><td>Opens the channel's long-form uploads playlist, newest first. Shorts are excluded by using the <code>UULF</code> playlist instead of <code>UU</code>.</td></tr>
+            <tr><td><span class="code2">CC</span></td><td>ChannelCategorizer</td><td>sidebar</td><td>Adds a "Channel categories" block above the subscription list; group channels by hand and fold them open or closed.</td></tr>
+            <tr><td><span class="code2">CF</span></td><td>CategoryFeed</td><td>home page</td><td>Replaces the home grid with the newest videos of one category (or of every subscription), sorted by date.</td></tr>
+            <tr><td><span class="code2">TS</span></td><td>Transcript</td><td>video pages</td><td>Opens YouTube's own transcript panel from the top bar and adds a two-dropdown language bar to it (source track / translation).</td></tr>
+            <tr><td><span class="code2">UD</span></td><td>UploadDate</td><td>video pages</td><td>Appends the exact upload date (<code>day.month.year</code>) to the view-count line.</td></tr>
+            <tr><td><span class="code2">TD</span></td><td>ThumbsDown</td><td>video pages</td><td>Shows a public estimate of the dislike count next to the dislike button.</td></tr>
+            <tr><td><span class="code2">CH</span></td><td>HideComments</td><td>video pages</td><td>Hides the comment section and, on a stream, the live chat.</td></tr>
+            <tr><td><span class="code2">HR</span></td><td>HideSideRecommendations</td><td>video pages</td><td>Hides the recommendation list beside the player, leaving the playlist panel alone.</td></tr>
+            <tr><td><span class="code2">HS</span></td><td>HideShorts</td><td>everywhere</td><td>Hides every Shorts shelf, card, tab and sidebar entry, and opens a <code>/shorts/</code> link in the normal player instead.</td></tr>
+            <tr><td><span class="code2">HL</span></td><td>HideLive</td><td>everywhere</td><td>Hides <em>finished</em> streams. A stream that is running right now stays.</td></tr>
+            <tr><td><span class="code2">HE</span></td><td>HideExplore</td><td>sidebar</td><td>Hides the Explore block.</td></tr>
+            <tr><td><span class="code2">HM</span></td><td>HideMore</td><td>sidebar</td><td>Hides the "More from YouTube" block, the report-history entry and the link footer under them.</td></tr>
+            <tr><td><span class="code2">HY</span></td><td>HideYou</td><td>sidebar</td><td>Hides the "You" block.</td></tr>
+            <tr><td><span class="code2">HC</span></td><td>HideChannels</td><td>sidebar</td><td>Hides the subscription channel list and the Subscriptions entry.</td></tr>
+            <tr><td><span class="code2">ST</span></td><td>Settings</td><td>always last</td><td>Gear icon: interface language plus five switches that hide parts of YouTube's own chrome.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2 id="hiding">5. How hiding works</h2>
+      <p>Every hiding widget is one call to the same factory. It injects a single
+        <code>&lt;style&gt;</code> element into <code>&lt;head&gt;</code> and removes it again when
+        switched off. Nothing is deleted from the page.</p>
+      <pre><code>hideSectionWidget({
+  name: 'HideComments',
+  iconPrefix: 'ch',
+  storageKey: 'ch-hidden',
+  styleId: 'ch-style',
+  css: 'ytd-comments, ytd-live-chat-frame, #chat-container { display: none !important; }',
+  titles: { hidden: 'chOn', visible: 'chOff', inactive: 'chIdle' },
+});</code></pre>
+      <div class="grid2">
+        <div class="card">
+          <h3>Why a stylesheet, not DOM removal</h3>
+          <p>YouTube re-renders whole sections on every in-app navigation. A removed node comes back
+            seconds later; a CSS rule keeps working with no observer and no re-run.</p>
+        </div>
+        <div class="card">
+          <h3>Why links, not headings</h3>
+          <p>Sidebar headings are translated, so they cannot be matched. Every block is recognised by
+            a link only it contains — <code>/premium</code>, <code>/feed/you</code>,
+            <code>/@handle</code> — which is language-independent.</p>
+        </div>
+      </div>
+      <div class="note warn">
+        <strong>The one rule that needs JavaScript.</strong> A finished stream carries no badge; its
+        only trace is the phrase "Streamed 3 days ago". On channel pages that phrase sits in an
+        <code>aria-label</code> and CSS can match it — but in search results and the watch-page
+        sidebar it exists only as text, and CSS cannot match text. So HideLive also runs a small
+        scanner: it reads the metadata line of each card, marks the matches with
+        <code>data-ct-past-stream="1"</code> and lets the stylesheet hide that attribute. The scanner
+        only runs while HideLive is on, only re-checks cards that actually changed, and pauses while
+        the tab is in the background.
+      </div>
+
+      <h2 id="layout">6. Masthead layout algorithm</h2>
+      <p>YouTube's top bar is a <code>space-between</code> flex row, so every pixel added on the left
+        pushes the search box right. The icon row cancels its own footprint with a negative margin and
+        sits in the empty space that is already there. Three rules, in order:</p>
+      <ol>
+        <li>All icons fit that gap at a comfortable size → the search box does not move.</li>
+        <li>They do not → the row takes real space and the search box slides right. Icons never shrink
+          below 28&nbsp;px; the box moves instead.</li>
+        <li>Whatever empty space is left between the last icon and the input is then clawed back, so the
+          icons always end up beside the search box rather than stranded next to the logo.</li>
+      </ol>
+      <div class="tablewrap card">
+        <table>
+          <thead><tr><th>Window</th><th>Gap</th><th>Icon size</th><th>Visible</th><th>Search box</th></tr></thead>
+          <tbody>
+            <tr><td>1920 px</td><td>402 px</td><td>28 px</td><td>15 / 15</td><td>moves 33 px</td></tr>
+            <tr><td>1277 px</td><td>80 px</td><td>28 px</td><td>15 / 15</td><td>692 → 510 px wide</td></tr>
+            <tr><td>900 px</td><td>28 px</td><td>28 px</td><td>15 / 15</td><td>419 → 125 px wide</td></tr>
+            <tr><td>1920 px, 9 widgets on</td><td>402 px</td><td>43 px</td><td>9 / 9</td><td>does not move</td></tr>
+            <tr><td>1920 px, 5 widgets on</td><td>402 px</td><td>44 px</td><td>5 / 5</td><td>does not move</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="lede">Two details that cost a round of debugging each: the row needs
+        <code>z-index</code>, because the neighbouring flex item's box starts 40 px before the input
+        inside it and was swallowing clicks on the last icon; and the "am I covering the input" check
+        has to compare against the same padding the layout aims for, or it fires on the layout's own
+        target and shoves the search box every time.</p>
+
+      <h2 id="settings">7. Settings panel</h2>
+      <div class="grid2">
+        <div class="card">
+          <h3>Language</h3>
+          <p>Six shipped languages plus about forty more. Anything outside the six is translated once
+            through a public translation endpoint and cached in local storage, so the panel opens
+            instantly afterwards. Widget names stay as they are — a name is a name.</p>
+        </div>
+        <div class="card">
+          <h3>Hide parts of YouTube</h3>
+          <ul class="tight">
+            <li><strong>Sidebar</strong> — the left panel in all of its forms, plus the hamburger.</li>
+            <li><strong>Voice search</strong> — the microphone button.</li>
+            <li><strong>Create / upload button</strong>.</li>
+            <li><strong>Notifications bell</strong>.</li>
+            <li><strong>Video description</strong> — hides the description text, disables clicks on the
+              leftover box, and expands the metadata line once so it reads
+              <code>83,851 views · Jul 28, 2026</code> instead of <code>83K views · 2 weeks ago</code>.</li>
+          </ul>
+        </div>
+      </div>
+
+      <h2 id="network">8. Network calls &amp; data</h2>
+      <div class="tablewrap card">
+        <table>
+          <thead><tr><th>Endpoint</th><th>Used by</th><th>When</th><th>What is sent</th></tr></thead>
+          <tbody>
+            <tr><td><code>/feeds/videos.xml</code> (same origin)</td><td>CategoryFeed</td><td>while building a category feed</td><td>a channel or playlist id</td></tr>
+            <tr><td><code>/youtubei/v1/player</code> (same origin)</td><td>UploadDate</td><td>once per video, cached in memory</td><td>the video id</td></tr>
+            <tr><td>channel and watch pages (same origin)</td><td>PlayAll, CategoryFeed, Transcript</td><td>on demand</td><td>nothing beyond the URL</td></tr>
+            <tr><td>public translation endpoint</td><td>Settings language, Transcript translation</td><td>when a non-English language is picked</td><td>the interface strings, or the transcript lines being translated</td></tr>
+            <tr><td>public ratings API</td><td>ThumbsDown</td><td>per video, from the service worker</td><td>the video id</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="lede">The service worker exists for exactly one reason: a page script may not call the
+        ratings API cross-origin, an extension worker may.</p>
+      <div class="note">
+        <strong>The translation endpoint has a quota.</strong> It is Google's free one and it counts per
+        IP address: a burst of batches — and one transcript is several, sent together — can come back
+        <code>429 Too Many Requests</code> for a minute or two, then work again with nothing changed.
+        Until 1.6.0 a single <code>429</code> in a single batch failed the whole transcript and said only
+        <em>Translation failed</em>. Since 1.6.1 every batch gets three tries with a growing, jittered
+        wait, and anything that still fails is named in the bar itself:
+        <code>Translation failed · HTTP 429</code>.
+      </div>
+
+      <h2 id="privacy">9. Privacy</h2>
+      <ul class="tight">
+        <li>No analytics, no telemetry, no tracking, no remote configuration.</li>
+        <li>No account data is read or stored. Settings, categories and translation caches live in
+          <code>chrome.storage.local</code> on the machine and nowhere else.</li>
+        <li>Two features talk to a service other than YouTube: the translation endpoint (only for the
+          strings being translated) and the ratings API (only a video id). Leave those widgets off and
+          the extension never leaves the youtube.com origin.</li>
+        <li>The <code>management</code> permission is deliberately <em>not</em> requested — the
+          extension cannot see or touch other extensions.</li>
+      </ul>
+
+      <h2 id="perf">10. Performance work</h2>
+      <p>Measured on live pages with <code>performance.now()</code>, each function run 5–20 times and
+        averaged.</p>
+      <div class="tablewrap card">
+        <table>
+          <thead><tr><th>Area</th><th>Before</th><th>After</th><th>Result</th></tr></thead>
+          <tbody>
+            <tr><td>Storage reads per sync</td><td>16 IPC round trips</td><td>400 ms read cache, cleared on any write</td><td>16 → 1–2</td></tr>
+            <tr><td>Row alignment</td><td>8 passes, each a forced layout</td><td>2 passes with a doubled step</td><td>1.10 ms → <span class="ok">0.30 ms</span></td></tr>
+            <tr><td>Masthead measuring</td><td>every sync</td><td>skipped unless width or icon count changed</td><td>2 forced layouts saved per navigation</td></tr>
+            <tr><td>Finished-stream scan</td><td>every card, every mutation batch</td><td>only the cards that changed</td><td>1.58 ms → <span class="ok">0.16 ms</span> (−90%)</td></tr>
+            <tr><td>Background tab</td><td>kept scanning</td><td>deferred while <code>document.hidden</code></td><td>zero work when not visible</td></tr>
+            <tr><td>Window resize</td><td>re-measured on every event</td><td>150 ms debounce</td><td>dozens of measurements → 1</td></tr>
+            <tr><td>Feed cache (RAM)</td><td>unbounded</td><td>60 entries, oldest evicted</td><td>flat memory in long sessions</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Structural choices that keep the cost low in the first place: hiding is CSS, not DOM surgery;
+        there is one content script and one shared icon row rather than one per feature; the only
+        <code>MutationObserver</code> on the page body belongs to a single widget and only runs while
+        that widget is on.</p>
+
+      <h2 id="tests">11. Tests</h2>
+      <div class="tablewrap card">
+        <table>
+          <thead><tr><th>Harness</th><th>Checks</th></tr></thead>
+          <tbody>
+            <tr><td><code>smoke-test.js</code></td><td>Runs <code>content.js</code> under browser stubs: it must load without throwing, register all fifteen widgets, and have every one of them enabled by default.</td></tr>
+            <tr><td>parity check</td><td>Every widget in the registry has a checkbox in the popup and both icon PNGs on disk.</td></tr>
+            <tr><td>settings-panel check</td><td>The panel builds its five switches, writes all five keys, and lists the languages as one flat list with no duplicates.</td></tr>
+            <tr><td>popup-language check</td><td>With a non-English language selected, all fifteen descriptions come back translated and get cached.</td></tr>
+            <tr><td><code>checks/translate-retry.mjs</code></td><td>Shipped in the zip, run with <code>node checks/translate-retry.mjs</code>. It lifts the real <code>translateBatch</code> out of <code>content.js</code> — not a copy — stubs <code>fetch</code>, and checks the five branches that matter: a rate limit that lifts is invisible to the caller, both answer shapes are read, a <code>400</code> is not retried, network errors are, and a rate limit that will not lift gives up after the third try and not the fourth.</td></tr>
+            <tr><td>live checks</td><td>Every rule is applied to real pages — search, channel, video, stream, finished stream, Shorts, playlist — and measured before, during and after, including that it is fully reversible.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2 id="limits">12. Known limits</h2>
+      <ul class="tight">
+        <li>Finished streams are recognised from a phrase that YouTube translates; fourteen languages
+          are listed. In an interface language outside that list, past streams stay visible.</li>
+        <li>On playlist pages the metadata line does not carry that phrase at all, so HideLive does not
+          reach them there.</li>
+        <li>The create/upload button has no stable id across YouTube versions; its rule matches by shape
+          and is the most likely to need a touch-up after a redesign.</li>
+        <li>Hiding the sidebar also hides ChannelCategorizer, because that widget lives inside the
+          sidebar.</li>
+        <li>Transcript translation goes through a free public endpoint with a per-IP quota. Three tries
+          with a growing wait cover the usual burst; a quota that stays shut answers
+          <code>Translation failed · HTTP 429</code> and clears on its own in a minute or two. There is
+          no key to buy that around, and the real caption files are not reachable — see §8.</li>
+        <li>Anything that depends on YouTube's own markup can break when YouTube changes it. That is the
+          nature of the thing; the code comments name the exact selectors and why they were chosen.</li>
+      </ul>
+
+      <h2 id="versioning">13. Versioning</h2>
+      <p>One work round is one patch step, rolling over at nine: <code>1.0.0</code> is the first round,
+        <code>1.0.9</code> the tenth, <code>1.1.0</code> the eleventh. The popup shows the version in
+        the top right, read straight from the manifest.</p>
+
+      <h2 id="legal">14. License &amp; disclaimer</h2>
+      <div class="card">
+        <p><strong>MIT licensed.</strong> Use it, fork it, ship it.</p>
+        <p class="lede">
+          This is an independent, unofficial project. It is not affiliated with, endorsed by or
+          sponsored by YouTube or Google. "YouTube" and "Google" are trademarks of their respective
+          owners and are used here only to describe what the extension works with. The extension ships
+          no third-party logo, artwork, font or code — every icon in it is drawn by the included
+          script. It does not download videos, remove advertising, or alter any page for anyone other
+          than the person who installed it: it changes the local rendering of a page in that person's
+          own browser.
+        </p>
+      </div>
+
+      <footer>
+        CubeDeck v1.6.1 — documentation generated from the source in this repository.
+      </footer>
+    </div>
+  </body>
+</html>
