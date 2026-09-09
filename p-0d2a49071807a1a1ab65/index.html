@@ -108,7 +108,7 @@
           <polygon points="43,58 43,98 74,78" fill="#ffffff"/>
         </svg>
         <div>
-          <h1>CubeDeck <span class="pill">v1.6.1</span></h1>
+          <h1>CubeDeck <span class="pill">v1.8.7</span></h1>
           <p class="lede">
             One browser extension, fifteen small tools for the YouTube web interface — each one
             switchable on its own. This page documents every part of it: the architecture, each
@@ -118,9 +118,20 @@
       </header>
 
       <div class="note">
-        <strong>Download — <a href="CubeDeck-1.6.1.zip">CubeDeck-1.6.1.zip</a></strong> (browser extension:
+        <strong>Download — <a href="CubeDeck-1.8.7.zip">CubeDeck-1.8.7.zip</a></strong> (browser extension:
         Windows, macOS and Linux alike). Inside: the <code>CubeDeck</code> folder to load into the
-        browser, this page, and the check that ships with it. Loading it takes the six steps in §1.
+        browser, this page, and the checks that ship with it. Loading it takes the six steps in §1.
+      </div>
+
+      <div class="note warn">
+        <strong>Coverage note (v1.8.7):</strong> this page's own architecture/widget prose was last
+        fully rewritten at v1.6.0. It has since been kept current for two things ported in from a
+        separate line of work — the transcript translation retry (§8, §12) and the Watch-Time Tracker
+        (§4's <code>WT</code> row, §9, §11, §12) — plus the version number and file sizes above, which
+        are real. Everything this extension has grown between v1.6.0 and v1.8.7 on its own (icon
+        theme picker, loop/repeat, chat-hide timing, transcript download, and more) is not yet
+        described here. <code>log.md</code> / <code>test.md</code> / <code>widgets.md</code> in this
+        project's own working folder are the accurate record of that work.
       </div>
 
       <nav class="toc card">
@@ -129,7 +140,7 @@
           <li><a href="#install">Install</a></li>
           <li><a href="#map">How it works — mind map</a></li>
           <li><a href="#architecture">Architecture &amp; lifecycle</a></li>
-          <li><a href="#widgets">The fifteen widgets</a></li>
+          <li><a href="#widgets">The sixteen widgets</a></li>
           <li><a href="#hiding">How hiding works</a></li>
           <li><a href="#layout">Masthead layout algorithm</a></li>
           <li><a href="#settings">Settings panel</a></li>
@@ -244,12 +255,13 @@
           <thead><tr><th>File</th><th>Size</th><th>Job</th></tr></thead>
           <tbody>
             <tr><td><code>manifest.json</code></td><td>~1 KB</td><td>MV3 manifest: one content script on <code>www.youtube.com</code>, a popup, a service worker, three host permissions.</td></tr>
-            <tr><td><code>content.js</code></td><td>~139 KB</td><td>Everything that runs on the page: the icon row, all fifteen widgets, the settings panel, the layout maths.</td></tr>
-            <tr><td><code>popup.html</code> / <code>popup.js</code></td><td>~8 KB</td><td>The toolbar panel: one checkbox per widget, version badge, translated descriptions.</td></tr>
+            <tr><td><code>content.js</code></td><td>~202 KB</td><td>Everything that runs on the page: the icon row, all fifteen widgets, the settings panel, the layout maths.</td></tr>
+            <tr><td><code>popup.html</code> / <code>popup.js</code></td><td>~16 KB</td><td>The toolbar panel: one checkbox per widget, version badge, translated descriptions.</td></tr>
             <tr><td><code>background.js</code></td><td>~1 KB</td><td>Service worker. Only used for the one cross-origin request a content script may not make itself.</td></tr>
-            <tr><td><code>icons/*.png</code></td><td>33 files</td><td>Toolbar cube plus a light/dark pair for every masthead button.</td></tr>
+            <tr><td><code>icons/*.png</code></td><td>132 files</td><td>Four icon themes (card/circle/ring/masthead) x light/dark, plus the toolbar cube for every masthead button.</td></tr>
             <tr><td><code>icons/generate-icons.ps1</code></td><td>~9 KB</td><td>Draws every PNG from code — colours come from a hue formula, so no two icons look alike.</td></tr>
             <tr><td><code>checks/translate-retry.mjs</code></td><td>~3 KB</td><td>Sits beside the extension folder, not inside it. Node, no dependencies, no network — see §11.</td></tr>
+            <tr><td><code>checks/watch-time.mjs</code></td><td>~12 KB</td><td>Classification, channel-handle parsing, the duration accumulator, and the storage roll-up math — see §11.</td></tr>
           </tbody>
         </table>
       </div>
@@ -287,7 +299,7 @@ yt-navigate-finish  (YouTube is a single-page app: no reload between videos)
       <p>Everything lives in <code>chrome.storage.local</code>. A change in one tab reaches every other
         open tab through <code>chrome.storage.onChanged</code>, so switches take effect without a reload.</p>
 
-      <h2 id="widgets">4. The fifteen widgets</h2>
+      <h2 id="widgets">4. The sixteen widgets</h2>
       <p>The two-letter code is what the masthead icon shows, and the same code is printed next to the
         name in the popup. A bright icon means the widget is doing something right now; a dim icon
         means it is idle. For the hiding widgets that reads as <em>bright = something is hidden</em>.</p>
@@ -309,6 +321,7 @@ yt-navigate-finish  (YouTube is a single-page app: no reload between videos)
             <tr><td><span class="code2">HM</span></td><td>HideMore</td><td>sidebar</td><td>Hides the "More from YouTube" block, the report-history entry and the link footer under them.</td></tr>
             <tr><td><span class="code2">HY</span></td><td>HideYou</td><td>sidebar</td><td>Hides the "You" block.</td></tr>
             <tr><td><span class="code2">HC</span></td><td>HideChannels</td><td>sidebar</td><td>Hides the subscription channel list and the Subscriptions entry.</td></tr>
+            <tr><td><span class="code2">WT</span></td><td>Watch-Time Tracker</td><td>masthead, all pages</td><td>A strip on the right of the search box (not the switchable icon row) showing today's Video/Shorts/Live counts and durations; click it for a Today/7&nbsp;days/All-time breakdown by channel.</td></tr>
             <tr><td><span class="code2">ST</span></td><td>Settings</td><td>always last</td><td>Gear icon: interface language plus five switches that hide parts of YouTube's own chrome.</td></tr>
           </tbody>
         </table>
@@ -436,6 +449,9 @@ yt-navigate-finish  (YouTube is a single-page app: no reload between videos)
           the extension never leaves the youtube.com origin.</li>
         <li>The <code>management</code> permission is deliberately <em>not</em> requested — the
           extension cannot see or touch other extensions.</li>
+        <li>Watch-Time Tracker makes no network call at all - classification, channel identity, and
+          storage are all local. Its counts and durations live in <code>chrome.storage.local</code>,
+          same as every other widget's settings.</li>
       </ul>
 
       <h2 id="perf">10. Performance work</h2>
@@ -470,6 +486,7 @@ yt-navigate-finish  (YouTube is a single-page app: no reload between videos)
             <tr><td>settings-panel check</td><td>The panel builds its five switches, writes all five keys, and lists the languages as one flat list with no duplicates.</td></tr>
             <tr><td>popup-language check</td><td>With a non-English language selected, all fifteen descriptions come back translated and get cached.</td></tr>
             <tr><td><code>checks/translate-retry.mjs</code></td><td>Shipped in the zip, run with <code>node checks/translate-retry.mjs</code>. It lifts the real <code>translateBatch</code> out of <code>content.js</code> — not a copy — stubs <code>fetch</code>, and checks the five branches that matter: a rate limit that lifts is invisible to the caller, both answer shapes are read, a <code>400</code> is not retried, network errors are, and a rate limit that will not lift gives up after the third try and not the fourth.</td></tr>
+            <tr><td><code>checks/watch-time.mjs</code></td><td>Run with <code>node checks/watch-time.mjs</code>. Extracts the real classification, channel-handle, duration-accumulator and storage functions out of <code>content.js</code> and checks them against the exact <code>#info-container</code> strings captured from three real pages (a normal upload, a currently-live stream, a finished one) plus the daily-window pruning and range-summing math.</td></tr>
             <tr><td>live checks</td><td>Every rule is applied to real pages — search, channel, video, stream, finished stream, Shorts, playlist — and measured before, during and after, including that it is fully reversible.</td></tr>
           </tbody>
         </table>
@@ -491,6 +508,10 @@ yt-navigate-finish  (YouTube is a single-page app: no reload between videos)
           no key to buy that around, and the real caption files are not reachable — see §8.</li>
         <li>Anything that depends on YouTube's own markup can break when YouTube changes it. That is the
           nature of the thing; the code comments name the exact selectors and why they were chosen.</li>
+        <li>Watch-Time Tracker groups by the channel's vanity handle (the <code>/@name</code> link on
+          the watch page), not YouTube's canonical channel id - the id is not cheaply reachable from
+          this page without a network call the feature does not otherwise need. A channel that changes
+          its handle starts a new entry; past numbers under the old handle are not merged in.</li>
       </ul>
 
       <h2 id="versioning">13. Versioning</h2>
@@ -513,7 +534,7 @@ yt-navigate-finish  (YouTube is a single-page app: no reload between videos)
       </div>
 
       <footer>
-        CubeDeck v1.6.1 — documentation generated from the source in this repository.
+        CubeDeck v1.8.7 — documentation generated from the source in this repository.
       </footer>
     </div>
   </body>
