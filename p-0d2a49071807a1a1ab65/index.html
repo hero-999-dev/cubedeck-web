@@ -108,7 +108,7 @@
           <polygon points="43,58 43,98 74,78" fill="#ffffff"/>
         </svg>
         <div>
-          <h1>CubeDeck <span class="pill">v1.8.7</span></h1>
+          <h1>CubeDeck <span class="pill">v1.9.3</span></h1>
           <p class="lede">
             One browser extension, fifteen small tools for the YouTube web interface — each one
             switchable on its own. This page documents every part of it: the architecture, each
@@ -118,17 +118,17 @@
       </header>
 
       <div class="note">
-        <strong>Download — <a href="CubeDeck-1.8.7.zip">CubeDeck-1.8.7.zip</a></strong> (browser extension:
+        <strong>Download — <a href="CubeDeck-1.9.3.zip">CubeDeck-1.9.3.zip</a></strong> (browser extension:
         Windows, macOS and Linux alike). Inside: the <code>CubeDeck</code> folder to load into the
         browser, this page, and the checks that ship with it. Loading it takes the six steps in §1.
       </div>
 
       <div class="note warn">
-        <strong>Coverage note (v1.8.7):</strong> this page's own architecture/widget prose was last
+        <strong>Coverage note (v1.9.3):</strong> this page's own architecture/widget prose was last
         fully rewritten at v1.6.0. It has since been kept current for two things ported in from a
         separate line of work — the transcript translation retry (§8, §12) and the Watch-Time Tracker
         (§4's <code>WT</code> row, §9, §11, §12) — plus the version number and file sizes above, which
-        are real. Everything this extension has grown between v1.6.0 and v1.8.7 on its own (icon
+        are real. Everything this extension has grown between v1.6.0 and v1.9.3 on its own (icon
         theme picker, loop/repeat, chat-hide timing, transcript download, and more) is not yet
         described here. <code>log.md</code> / <code>test.md</code> / <code>widgets.md</code> in this
         project's own working folder are the accurate record of that work.
@@ -321,7 +321,8 @@ yt-navigate-finish  (YouTube is a single-page app: no reload between videos)
             <tr><td><span class="code2">HM</span></td><td>HideMore</td><td>sidebar</td><td>Hides the "More from YouTube" block, the report-history entry and the link footer under them.</td></tr>
             <tr><td><span class="code2">HY</span></td><td>HideYou</td><td>sidebar</td><td>Hides the "You" block.</td></tr>
             <tr><td><span class="code2">HC</span></td><td>HideChannels</td><td>sidebar</td><td>Hides the subscription channel list and the Subscriptions entry.</td></tr>
-            <tr><td><span class="code2">WT</span></td><td>Watch-Time Tracker</td><td>masthead, all pages</td><td>A strip on the right of the search box (not the switchable icon row) showing today's Video/Shorts/Live counts and durations; click it for a Today/7&nbsp;days/All-time breakdown by channel.</td></tr>
+            <tr><td><span class="code2">WT</span></td><td>Watch-Time Tracker</td><td>masthead, all pages</td><td>A strip parked immediately left of YouTube's own masthead buttons (not part of the switchable icon row), and taking no layout space there — it cancels its own footprint, so the search box does not shift when the tracker appears, goes away, or changes width. It shows what has been watched today, to the second: Σ the day's total, then ▶ videos, ⚡ Shorts, ● live, each with its own count, naming itself on hover, and dimmed while its count is zero. Clicking a badge opens the breakdown by channel <em>for that kind alone</em>; the total opens all of them together. Five ranges: Today, 7&nbsp;days, 30&nbsp;days, 1&nbsp;year, All-time — the first four come from one bucket per day, kept for a year; All-time from a running total that is never pruned. Escape or a click elsewhere closes the panel. Two switches in the settings panel govern it: hide the strip but keep counting, or turn the tracker off so nothing is recorded at all.</td></tr>
+            <tr><td><span class="code2">⊘</span></td><td>Blocker</td><td>masthead, all pages</td><td>Two lists behind the ⊘ button on the right of the tracker: blocked channels and blocked videos. Paste a channel link, a <code>@handle</code>, a video link or a Shorts link and it goes on the right list; ✕ takes it off again. With <em>Also stop them opening directly</em> ticked, landing on a blocked video or channel — from a link, a bookmark or autoplay — gets a CubeDeck stop page instead of the video, and the player is paused behind it. Everything on the lists stops appearing in every card shape YouTube uses — home, search, the sidebar, a channel’s own page, Shorts shelves — through one generated stylesheet, so no observer runs and cards that arrive later are hidden too. A handle is matched exactly, so blocking <code>@lofi</code> does not also hide <code>@lofigirl</code>. Not in the switchable icon row and not affected by the tracker’s own switches.</td></tr>
             <tr><td><span class="code2">ST</span></td><td>Settings</td><td>always last</td><td>Gear icon: interface language plus five switches that hide parts of YouTube's own chrome.</td></tr>
           </tbody>
         </table>
@@ -364,15 +365,33 @@ yt-navigate-finish  (YouTube is a single-page app: no reload between videos)
       </div>
 
       <h2 id="layout">6. Masthead layout algorithm</h2>
-      <p>YouTube's top bar is a <code>space-between</code> flex row, so every pixel added on the left
-        pushes the search box right. The icon row cancels its own footprint with a negative margin and
-        sits in the empty space that is already there. Three rules, in order:</p>
+      <p><strong>Row or menu.</strong> Fifteen icons do not fit the masthead's spare space on a narrow
+        window, and the settings panel's <em>Icon row</em> choice decides what happens then:
+        <em>Always a row</em> keeps the behaviour below, <em>Always behind a menu button</em> puts every
+        icon inside a ☰ dropdown, and <em>Automatic</em> — the default — uses the row exactly while it
+        fits and the menu once it would start moving the search box. Inside the menu the icons are at
+        full size, five to a line, and the drawer's spare bottom-right cell carries the version number.
+        The settings gear is the exception: it stays in the masthead next to the ☰ rather than going
+        into the drawer, so settings never need two clicks.</p>
+      <p>The rest applies while the icons are in the row. YouTube's top bar is a
+        <code>space-between</code> flex row, so every pixel added on the left pushes the search box
+        right. The icon row cancels its own footprint with a negative margin and sits in the empty
+        space that is already there. Three rules, in order:</p>
       <ol>
         <li>All icons fit that gap at a comfortable size → the search box does not move.</li>
         <li>They do not → the row takes real space and the search box slides right. Icons never shrink
           below 28&nbsp;px; the box moves instead.</li>
-        <li>Whatever empty space is left between the last icon and the input is then clawed back, so the
-          icons always end up beside the search box rather than stranded next to the logo.</li>
+        <li>Nothing is clawed back, and nothing is cached. Pulling <code>#center</code> left to close the
+          gap between the last icon and the input had to aim past its target, and every overshoot put the
+          search box <em>underneath</em> the icons — the row paints above it. So the row either fits the gap
+          it measured, footprint cancelled and the box exactly where YouTube put it, or it takes real flex
+          space and the box slides right. Flex items cannot overlap, so there is no third case. The layout
+          cache went with it: the row also moves between the masthead and the drawer, and a browser zoom
+          step did both — coming back to 100% matched the cache and left the margins from the narrow
+          layout in place.</li>
+        <li>A <code>MutationObserver</code> on the masthead puts the row, the strip and the blocker button
+          back when YouTube rebuilds its top bar and throws them away. Nothing announces that: no
+          navigation, sometimes not even a resize.</li>
       </ol>
       <div class="tablewrap card">
         <table>
@@ -534,7 +553,7 @@ yt-navigate-finish  (YouTube is a single-page app: no reload between videos)
       </div>
 
       <footer>
-        CubeDeck v1.8.7 — documentation generated from the source in this repository.
+        CubeDeck v1.9.3 — documentation generated from the source in this repository.
       </footer>
     </div>
   </body>
