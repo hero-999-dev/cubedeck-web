@@ -108,7 +108,7 @@
           <polygon points="43,58 43,98 74,78" fill="#ffffff"/>
         </svg>
         <div>
-          <h1>CubeDeck <span class="pill">v1.9.3</span></h1>
+          <h1>CubeDeck <span class="pill">v1.9.4</span></h1>
           <p class="lede">
             One browser extension, fifteen small tools for the YouTube web interface — each one
             switchable on its own. This page documents every part of it: the architecture, each
@@ -118,17 +118,17 @@
       </header>
 
       <div class="note">
-        <strong>Download — <a href="CubeDeck-1.9.3.zip">CubeDeck-1.9.3.zip</a></strong> (browser extension:
+        <strong>Download — <a href="CubeDeck-1.9.4.zip">CubeDeck-1.9.4.zip</a></strong> (browser extension:
         Windows, macOS and Linux alike). Inside: the <code>CubeDeck</code> folder to load into the
         browser, this page, and the checks that ship with it. Loading it takes the six steps in §1.
       </div>
 
       <div class="note warn">
-        <strong>Coverage note (v1.9.3):</strong> this page's own architecture/widget prose was last
+        <strong>Coverage note (v1.9.4):</strong> this page's own architecture/widget prose was last
         fully rewritten at v1.6.0. It has since been kept current for two things ported in from a
         separate line of work — the transcript translation retry (§8, §12) and the Watch-Time Tracker
         (§4's <code>WT</code> row, §9, §11, §12) — plus the version number and file sizes above, which
-        are real. Everything this extension has grown between v1.6.0 and v1.9.3 on its own (icon
+        are real. Everything this extension has grown between v1.6.0 and v1.9.4 on its own (icon
         theme picker, loop/repeat, chat-hide timing, transcript download, and more) is not yet
         described here. <code>log.md</code> / <code>test.md</code> / <code>widgets.md</code> in this
         project's own working folder are the accurate record of that work.
@@ -367,7 +367,7 @@ yt-navigate-finish  (YouTube is a single-page app: no reload between videos)
       <h2 id="layout">6. Masthead layout algorithm</h2>
       <p><strong>Row or menu.</strong> Fifteen icons do not fit the masthead's spare space on a narrow
         window, and the settings panel's <em>Icon row</em> choice decides what happens then:
-        <em>Always a row</em> keeps the behaviour below, <em>Always behind a menu button</em> puts every
+        <em>Always a row</em> keeps the behaviour below and lets the search box move if the icons cannot fit, <em>Always behind a menu button</em> puts every
         icon inside a ☰ dropdown, and <em>Automatic</em> — the default — uses the row exactly while it
         fits and the menu once it would start moving the search box. Inside the menu the icons are at
         full size, five to a line, and the drawer's spare bottom-right cell carries the version number.
@@ -553,7 +553,7 @@ yt-navigate-finish  (YouTube is a single-page app: no reload between videos)
       </div>
 
       <footer>
-        CubeDeck v1.9.3 — documentation generated from the source in this repository.
+        CubeDeck v1.9.4 — documentation generated from the source in this repository.
       </footer>
     </div>
   </body>
