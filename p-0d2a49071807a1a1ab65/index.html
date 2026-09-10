@@ -118,7 +118,7 @@
       </header>
 
       <div class="note">
-        <strong>Download — <a href="CubeDeck-1.9.4.zip">CubeDeck-1.9.4.zip</a></strong> (browser extension:
+        <strong>Download — <a href="CubeDeck-1.9.5.zip">CubeDeck-1.9.5.zip</a></strong> (browser extension:
         Windows, macOS and Linux alike). Inside: the <code>CubeDeck</code> folder to load into the
         browser, this page, and the checks that ship with it. Loading it takes the six steps in §1.
       </div>
@@ -367,9 +367,11 @@ yt-navigate-finish  (YouTube is a single-page app: no reload between videos)
       <h2 id="layout">6. Masthead layout algorithm</h2>
       <p><strong>Row or menu.</strong> Fifteen icons do not fit the masthead's spare space on a narrow
         window, and the settings panel's <em>Icon row</em> choice decides what happens then:
-        <em>Always a row</em> keeps the behaviour below and lets the search box move if the icons cannot fit, <em>Always behind a menu button</em> puts every
-        icon inside a ☰ dropdown, and <em>Automatic</em> — the default — uses the row exactly while it
-        fits and the menu once it would start moving the search box. Inside the menu the icons are at
+        <em>Always a row</em> keeps the row whatever it costs and lets the search box move, and get
+        narrower, if the icons cannot fit, <em>Always behind a menu button</em> puts every
+        icon inside a ☰ dropdown, and <em>Automatic</em> — the default — uses the row while the icons
+        fit the space YouTube already leaves and the ☰ drawer once they do not. In
+        <em>Automatic</em> the search box never moves at all: not a pixel, not for a moment. Inside the menu the icons are at
         full size, five to a line, and the drawer's spare bottom-right cell carries the version number.
         The settings gear is the exception: it stays in the masthead next to the ☰ rather than going
         into the drawer, so settings never need two clicks.</p>
@@ -378,9 +380,19 @@ yt-navigate-finish  (YouTube is a single-page app: no reload between videos)
         right. The icon row cancels its own footprint with a negative margin and sits in the empty
         space that is already there. Three rules, in order:</p>
       <ol>
-        <li>All icons fit that gap at a comfortable size → the search box does not move.</li>
-        <li>They do not → the row takes real space and the search box slides right. Icons never shrink
-          below 28&nbsp;px; the box moves instead.</li>
+        <li>All icons fit that gap at a comfortable size → the search box does not move. Sizes run from
+          44&nbsp;px down to a floor of 23&nbsp;px, and the floor is a measurement: at 1880&nbsp;px the
+          gap is 382&nbsp;px and fifteen icons at 25&nbsp;px need 389&nbsp;px of it, so anything higher
+          would put a full deck of widgets in the drawer on a 1920&nbsp;px screen.</li>
+        <li>They do not → <em>Automatic</em> takes the drawer, because the alternative is moving the
+          search box and that is what the drawer exists to avoid. <em>Always a row</em> takes real space
+          instead and the box slides right (measured at 1880&nbsp;px with 28&nbsp;px icons: 221&nbsp;px).</li>
+        <li>The gap is measured with the row hidden, and the widest reading each window width has given
+          is the one that counts. A single reading is not trustworthy: the same page at 1880&nbsp;px
+          answered 365&nbsp;px while YouTube was still putting its masthead back and 382&nbsp;px once it
+          had finished, and every way it goes wrong makes it read short. A deferred pass 1.5&nbsp;s later
+          checks the result against a masthead that has stopped moving, and sends the icons to the drawer
+          if a generous reading ever put them on the input.</li>
         <li>Nothing is clawed back, and nothing is cached. Pulling <code>#center</code> left to close the
           gap between the last icon and the input had to aim past its target, and every overshoot put the
           search box <em>underneath</em> the icons — the row paints above it. So the row either fits the gap
@@ -397,11 +409,11 @@ yt-navigate-finish  (YouTube is a single-page app: no reload between videos)
         <table>
           <thead><tr><th>Window</th><th>Gap</th><th>Icon size</th><th>Visible</th><th>Search box</th></tr></thead>
           <tbody>
-            <tr><td>1920 px</td><td>402 px</td><td>28 px</td><td>15 / 15</td><td>moves 33 px</td></tr>
-            <tr><td>1277 px</td><td>80 px</td><td>28 px</td><td>15 / 15</td><td>692 → 510 px wide</td></tr>
-            <tr><td>900 px</td><td>28 px</td><td>28 px</td><td>15 / 15</td><td>419 → 125 px wide</td></tr>
-            <tr><td>1920 px, 9 widgets on</td><td>402 px</td><td>43 px</td><td>9 / 9</td><td>does not move</td></tr>
-            <tr><td>1920 px, 5 widgets on</td><td>402 px</td><td>44 px</td><td>5 / 5</td><td>does not move</td></tr>
+            <tr><td>1880 px</td><td>382 px</td><td>25 px</td><td>15 / 15 in the row</td><td>does not move</td></tr>
+            <tr><td>1700 px</td><td>292 px</td><td>—</td><td>15 / 15 in the drawer</td><td>does not move</td></tr>
+            <tr><td>1600 px</td><td>242 px</td><td>—</td><td>15 / 15 in the drawer</td><td>does not move</td></tr>
+            <tr><td>1024 px</td><td>40 px</td><td>—</td><td>15 / 15 in the drawer</td><td>does not move</td></tr>
+            <tr><td>1880 px, <em>Always a row</em>, 28 px floor</td><td>382 px</td><td>28 px</td><td>15 / 15 in the row</td><td>moves 221 px, same width</td></tr>
           </tbody>
         </table>
       </div>
